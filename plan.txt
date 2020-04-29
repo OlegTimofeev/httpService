@@ -1,0 +1,19 @@
+1.Описание структур данных
+ а.fetchTask
+  taskID int
+  method string
+  path string
+  headers map([string]string)
+  body string
+ b.receivedResponse
+  httpStatus int
+  headers map([string]string)
+  bodyLen int
+2.Создание структур
+3.Создание функций для получения запроса FetchTask
+4.Инициализация бд для хранения fetchTask
+
+
+
+
+
