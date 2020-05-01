@@ -1,15 +1,16 @@
 package main
 
 type fetchTask struct {
-	taskID  int
-	method  string
-	path    string
-	headers map[string][]string
-	body    string
+	ID      int                 `json:"task_id"`
+	Method  string              `json:"method"`
+	Path    string              `json:"path"`
+	Headers map[string][]string `json:"headers"`
+	Body    string              `json:"body"`
 }
 
 type userResponse struct {
-	httpStatus int
-	headers    map[string]string
-	bodyLen    int
+	HttpStatus int                 `json:"http_status"`
+	Headers    map[string][]string `json:"headers"`
+	Body       string              `json:"body"`
+	BodyLen    int                 `json:"body_len"`
 }
