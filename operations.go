@@ -13,3 +13,7 @@ func getTasks(c echo.Context) error {
 func deleteFT(c echo.Context) error {
 	return nil
 }
+
+func useTask(c echo.Context) error {
+	return nil
+}

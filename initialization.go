@@ -10,5 +10,6 @@ func initializeServer() (string, *echo.Echo) {
 	r.GET("/sendTask", getResponse)
 	r.GET("/getTasks", getTasks)
 	r.DELETE("/delete/:ftId", deleteFT)
+	r.GET("/sendTask/:ftId", useTask)
 	return port, r
 }
