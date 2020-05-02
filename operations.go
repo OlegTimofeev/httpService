@@ -5,11 +5,12 @@ import (
 	"github.com/labstack/echo"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
 func getResponse(c echo.Context) error {
-	ft := new(fetchTask)
+	ft := new(FetchTask)
 	if err := json.NewDecoder(c.Request().Body).Decode(ft); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -22,7 +23,7 @@ func getResponse(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	ur := userResponse{
+	ur := UserResponse{
 		Headers:    resp.Header,
 		HttpStatus: resp.StatusCode,
 	}
@@ -31,19 +32,43 @@ func getResponse(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	bodyString := string(body)
-	ur.Body = bodyString
 	ur.BodyLen = len(bodyString)
+	ft, err = dataStore.addFetchTask(ft)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	ur.FetchTaskId = ft.ID
 	return c.JSON(http.StatusOK, ur)
 }
 
 func getTasks(c echo.Context) error {
-	return nil
+	tasks, err := dataStore.getAllTasks()
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	return c.JSON(http.StatusOK, tasks)
 }
 
 func deleteFT(c echo.Context) error {
-	return nil
+	id, err := strconv.Atoi(c.Param("ftId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	err = dataStore.deleteFetchTask(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	return c.JSON(http.StatusOK, "Operation : successful")
 }
 
-func useTask(c echo.Context) error {
-	return nil
+func getTask(c echo.Context) error {
+	id, err := strconv.Atoi(c.Param("ftId"))
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	task, err := dataStore.getFetchTask(id)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, err)
+	}
+	return c.JSON(http.StatusOK, task)
 }
