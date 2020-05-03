@@ -1,4 +1,4 @@
-package main
+package models
 
 type FetchTask struct {
 	ID      int                 `json:"task_id"`
