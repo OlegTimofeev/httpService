@@ -3,7 +3,7 @@ package api
 import (
 	"encoding/json"
 	"github.com/labstack/echo"
-	"httpService/data_base"
+	"httpService/dataBase"
 	"httpService/models"
 	"io/ioutil"
 	"net/http"
@@ -35,7 +35,7 @@ func GetResponse(c echo.Context) error {
 	}
 	bodyString := string(body)
 	ur.BodyLen = len(bodyString)
-	ft, err = data_base.GetDB().AddFetchTask(ft)
+	ft, err = dataBase.GetDB().AddFetchTask(ft)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -44,7 +44,7 @@ func GetResponse(c echo.Context) error {
 }
 
 func GetTasks(c echo.Context) error {
-	tasks, err := data_base.GetDB().GetAllTasks()
+	tasks, err := dataBase.GetDB().GetAllTasks()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -56,7 +56,7 @@ func DeleteFT(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	err = data_base.GetDB().DeleteFetchTask(id)
+	err = dataBase.GetDB().DeleteFetchTask(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -68,7 +68,7 @@ func GetTask(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	task, err := data_base.GetDB().GetFetchTask(id)
+	task, err := dataBase.GetDB().GetFetchTask(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}

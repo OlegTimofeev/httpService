@@ -1,4 +1,4 @@
-package data_base
+package dataBase
 
 import (
 	"httpService/models"
@@ -6,9 +6,9 @@ import (
 )
 
 type DataStore interface {
-	AddFetchTask(task *models.FetchTask) (*models.FetchTask, error)
-	DeleteFetchTask(taskId int) error
-	GetAllTasks() ([]*models.FetchTask, error)
+	addFetchTask(task *models.FetchTask) (*models.FetchTask, error)
+	deleteFetchTask(taskId int) error
+	getAllTasks() ([]*models.FetchTask, error)
 }
 
 type MapStore struct {

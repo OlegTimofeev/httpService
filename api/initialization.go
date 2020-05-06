@@ -2,11 +2,11 @@ package api
 
 import (
 	"github.com/labstack/echo"
-	"httpService/data_base"
+	"httpService/dataBase"
 )
 
 func InitializeServer() (string, *echo.Echo) {
-	data_base.InitDB()
+	dataBase.InitDB()
 	port := ":8080"
 	r := echo.New()
 	r.GET("/sendTask", GetResponse)

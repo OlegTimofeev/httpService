@@ -1,8 +1,6 @@
-package data_base
+package dataBase
 
-import (
-	"httpService/models"
-)
+import "httpService/models"
 
 var dataStore *MapStore
 
