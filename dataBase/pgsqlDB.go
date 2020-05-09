@@ -18,7 +18,7 @@ func connect() *pg.DB {
 
 func (db *PostgresDB) InitDB() {
 	db.pgdb = connect()
-	err := db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
+	if err := db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
 		if err := db.pgdb.DropTable((*models.FetchTask)(nil), &orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
@@ -35,8 +35,9 @@ func (db *PostgresDB) InitDB() {
 			return *new(error)
 		}
 		return nil
-	})
-	log.Fatal(err)
+	}); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func (db *PostgresDB) CheckConnection() error {

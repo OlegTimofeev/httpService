@@ -1,0 +1,146 @@
+swagger: '2.0'
+info:
+  version: 1.0.0
+  title: Fetchtask handling service
+produces:
+  - application/json
+consumes:
+  - application/json
+
+paths:
+  /sendTask:
+    post:
+      summary: create fetchTask
+      operationId: createFetchTask
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: "task"
+          description: "parameters for task"
+          required: true
+          schema:
+            type: object
+            properties:
+              Method:
+                type: string
+              Path:
+                type: string
+              Headers:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+              Body:
+                type: string
+      responses:
+        200:
+          description: scheme in json
+          schema:
+            $ref: "#/definitions/TaskResponse"
+        '404':
+          description: Requested page not found
+        '500':
+          description: Techical probles with server.
+  /getTasks:
+    get:
+      summary: return tasks
+      operationId: getAllTasks
+      produces:
+        - application/json
+      responses:
+        200:
+          description: scheme in json
+          schema:
+            type: array
+            items: {
+              $ref: "#/definitions/FetchTask"
+            }
+        '500':
+          description: Techical problems with server.
+  /deleteTask/{taskID}:
+    delete:
+      summary: delete task
+      operationId: deleteFetchTask
+      produces:
+        - application/json
+      parameters:
+        - name: taskID
+          in: path
+          description: ID of task to delete
+          required: true
+          type: integer
+          format: int
+      responses:
+        '200':
+          description: Operation succesful
+        '404':
+          description: A task with the current ID was not found.
+        '500':
+          description: No connection to database.
+  /getTask/{taskID}:
+    get:
+      summary: get task
+      operationId: getTask
+      produces:
+        - application/json
+      parameters:
+        - name: taskID
+          in: path
+          description: ID of task to get
+          required: true
+          type: integer
+          format: int
+      responses:
+        200:
+          description: scheme in json
+          schema:
+            $ref: "#/definitions/FetchTask"
+        '404':
+          description: A task with the current ID was not found.
+        '500':
+          description: Techical problems with server.
+
+definitions:
+  TaskResponse:
+    type: object
+    properties:
+      ID:
+        type: integer
+        format: int
+      HttpStatus:
+        type: integer
+        format: int
+      Method:
+        type: string
+      Path:
+        type: string
+      Headers:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+      BodyLenght:
+        type: integer
+        format: int
+  FetchTask:
+    type: object
+    properties:
+      ID:
+        type: integer
+        format: int
+      Method:
+        type: string
+      Path:
+        type: string
+      Body:
+        type: string
+      Headers:
+        type: object
+        additionalProperties:
+          type: array
+          items:
+            type: string
+

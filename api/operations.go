@@ -1,87 +1,98 @@
 package api
 
 import (
-	"encoding/json"
-	"github.com/labstack/echo"
+	"github.com/go-openapi/runtime/middleware"
 	"httpService/models"
+	models2 "httpService/service/models"
+	"httpService/service/restapi/operations"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 )
 
-func GetResponse(c echo.Context) error {
+func GetResponse(params operations.CreateFetchTaskParams) middleware.Responder {
 	if err := db.CheckConnection(); err != nil {
-		return c.JSON(http.StatusNotFound, "Error : no connection")
+		return middleware.Error(500, "Error : Connection lost")
 	}
 	ft := new(models.FetchTask)
-	if err := json.NewDecoder(c.Request().Body).Decode(ft); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	req, err := http.NewRequest(ft.Method, ft.Path, strings.NewReader(ft.Body))
+	ft.Body = params.Task.Body
+	ft.Path = params.Task.Path
+	ft.Headers = params.Task.Headers
+	ft.Method = params.Task.Method
+	req, err := http.NewRequest(ft.Method, params.Task.Path, strings.NewReader(params.Task.Body))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable produce request")
 	}
-	req.Header = ft.Headers
+	req.Header = params.Task.Headers
 	resp, err := new(http.Client).Do(req)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusNotFound, "Error : Page not found")
 	}
-	ur := models.UserResponse{
-		Headers:    resp.Header,
-		HttpStatus: resp.StatusCode,
-	}
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable to read response body")
 	}
 	bodyString := string(body)
-	ur.BodyLen = len(bodyString)
 	ft, err = db.AddFetchTask(ft)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add task to database")
 	}
-	ur.FetchTaskId = ft.ID
-	return c.JSON(http.StatusOK, ur)
+	taskResponse := models2.TaskResponse{
+		ID:         int64(ft.ID),
+		HTTPStatus: int64(resp.StatusCode),
+		Method:     ft.Method,
+		Path:       ft.Path,
+		BodyLenght: int64(len(bodyString)),
+		Headers:    resp.Header,
+	}
+	return operations.NewCreateFetchTaskOK().WithPayload(&taskResponse)
 }
 
-func GetTasks(c echo.Context) error {
+func GetTasks() middleware.Responder {
 	if err := db.CheckConnection(); err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return middleware.Error(500, "Error : Connection lost")
 	}
 	tasks, err := db.GetAllTasks()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable to get tasks from database")
 	}
-	return c.JSON(http.StatusOK, tasks)
+	tasksResp := make([]*models2.FetchTask, len(tasks))
+	for i := 0; i < len(tasks); i++ {
+		tasksResp[i] = convertForResp(tasks[i])
+	}
+	return operations.NewGetAllTasksOK().WithPayload(tasksResp)
 }
 
-func DeleteFT(c echo.Context) error {
+func DeleteFT(params operations.DeleteFetchTaskParams) middleware.Responder {
 	if err := db.CheckConnection(); err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return middleware.Error(http.StatusInternalServerError, "Error : Connection lost")
 	}
-	id, err := strconv.Atoi(c.Param("ftId"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+	id := int(params.TaskID)
+	if err := db.DeleteFetchTask(id); err != nil {
+		return middleware.Error(http.StatusNotFound, "Error : Unable to delete task from database")
 	}
-	err = db.DeleteFetchTask(id)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
-	return c.JSON(http.StatusOK, "Operation : successful")
+	return operations.NewDeleteFetchTaskOK()
 }
 
-func GetTask(c echo.Context) error {
+func GetTask(params operations.GetTaskParams) middleware.Responder {
 	if err := db.CheckConnection(); err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return middleware.Error(500, "Error : Connection lost")
 	}
-	id, err := strconv.Atoi(c.Param("ftId"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
-	}
+	id := int(params.TaskID)
 	task, err := db.GetFetchTask(id)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
 	}
-	return c.JSON(http.StatusOK, task)
+	return operations.NewGetTaskOK().WithPayload(convertForResp(task))
+}
+
+func convertForResp(task *models.FetchTask) *models2.FetchTask {
+	ftResp := new(models2.FetchTask)
+	ftResp.Method = task.Method
+	ftResp.ID = int64(task.ID)
+	ftResp.Body = task.Body
+	ftResp.Headers = task.Headers
+	ftResp.Path = task.Path
+	return ftResp
 }
