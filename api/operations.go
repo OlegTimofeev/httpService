@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"github.com/labstack/echo"
-	"httpService/dataBase"
 	"httpService/models"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +11,9 @@ import (
 )
 
 func GetResponse(c echo.Context) error {
+	if err := db.CheckConnection(); err != nil {
+		return c.JSON(http.StatusNotFound, "Error : no connection")
+	}
 	ft := new(models.FetchTask)
 	if err := json.NewDecoder(c.Request().Body).Decode(ft); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
@@ -35,7 +37,7 @@ func GetResponse(c echo.Context) error {
 	}
 	bodyString := string(body)
 	ur.BodyLen = len(bodyString)
-	ft, err = dataBase.GetDB().AddFetchTask(ft)
+	ft, err = db.AddFetchTask(ft)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -44,7 +46,10 @@ func GetResponse(c echo.Context) error {
 }
 
 func GetTasks(c echo.Context) error {
-	tasks, err := dataBase.GetDB().GetAllTasks()
+	if err := db.CheckConnection(); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	tasks, err := db.GetAllTasks()
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -52,11 +57,14 @@ func GetTasks(c echo.Context) error {
 }
 
 func DeleteFT(c echo.Context) error {
+	if err := db.CheckConnection(); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 	id, err := strconv.Atoi(c.Param("ftId"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	err = dataBase.GetDB().DeleteFetchTask(id)
+	err = db.DeleteFetchTask(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
@@ -64,11 +72,14 @@ func DeleteFT(c echo.Context) error {
 }
 
 func GetTask(c echo.Context) error {
+	if err := db.CheckConnection(); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
 	id, err := strconv.Atoi(c.Param("ftId"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
-	task, err := dataBase.GetDB().GetFetchTask(id)
+	task, err := db.GetFetchTask(id)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}

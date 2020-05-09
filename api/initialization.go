@@ -5,8 +5,11 @@ import (
 	"httpService/dataBase"
 )
 
+var db dataBase.DataStore
+
 func InitializeServer() (string, *echo.Echo) {
-	dataBase.InitDB()
+	db = new(dataBase.PostgresDB)
+	db.InitDB()
 	port := ":8080"
 	r := echo.New()
 	r.POST("/sendTask", GetResponse)

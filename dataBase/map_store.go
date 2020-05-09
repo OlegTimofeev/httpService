@@ -5,6 +5,15 @@ import (
 	"httpService/models"
 )
 
+func (ms *MapStore) InitDB() {
+	ms.Tasks = make(map[int]*models.FetchTask)
+	ms.TaskID = 0
+}
+
+func (ms *MapStore) CheckConnection() error {
+	return nil
+}
+
 func (ms *MapStore) AddFetchTask(ft *models.FetchTask) (*models.FetchTask, error) {
 	ft.ID = ms.GetTaskID()
 	ms.Tasks[ft.ID] = ft
