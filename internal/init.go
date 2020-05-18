@@ -31,7 +31,7 @@ func initServer() *restapi.Server {
 
 type TaskService struct {
 	Store     dataBase.DataStore
-	Requester request.RequesterModel
+	Requester request.Requester
 	Server    *restapi.Server
 }
 
@@ -44,6 +44,6 @@ func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	return taskService
 }
 
-func (ts *TaskService) SetRequester(rm request.RequesterModel) {
+func (ts *TaskService) SetRequester(rm request.Requester) {
 	ts.Requester = rm
 }

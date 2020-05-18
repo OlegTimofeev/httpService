@@ -6,15 +6,10 @@ import (
 	"net/http"
 )
 
-type RequesterModel interface {
+type Requester interface {
 	DoRequest(task models.FetchTask) (*models2.TaskResponse, error)
 }
 
-type Request struct {
+type HTTPRequester struct {
 	client http.Client
-}
-
-type TestRequester struct {
-	response *models2.TaskResponse
-	err      error
 }
