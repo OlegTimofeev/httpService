@@ -4,20 +4,19 @@ import (
 	"errors"
 	"github.com/go-pg/pg"
 	"github.com/go-pg/pg/orm"
-	"httpService/models"
+	"httpService/internal/models"
 	"log"
 )
 
-var postgres *pg.DB
-var pgOptions = pg.Options{User: user, Password: password, Database: dbname}
-
-func connect() *pg.DB {
-	postgres = pg.Connect(&pgOptions)
+func connect(config ConfigDB) *pg.DB {
+	postgres := pg.Connect(&pg.Options{User: config.User, Password: config.Password, Database: config.Dbname})
 	return postgres
 }
 
-func (db *PostgresDB) InitDB() {
-	db.pgdb = connect()
+func NewPGStore(config ConfigDB) *PostgresDB {
+	db := new(PostgresDB)
+	db.pgdb = connect(config)
+
 	if err := db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
 		if err := db.pgdb.DropTable((*models.FetchTask)(nil), &orm.DropTableOptions{
 			IfExists: true,
@@ -32,12 +31,13 @@ func (db *PostgresDB) InitDB() {
 			return err
 		}
 		if cons := db.pgdb.PoolStats().Hits; cons < 1 {
-			return *new(error)
+			return errors.New("no connection")
 		}
 		return nil
 	}); err != nil {
 		log.Fatal(err)
 	}
+	return db
 }
 
 func (db *PostgresDB) CheckConnection() error {

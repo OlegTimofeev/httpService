@@ -2,17 +2,15 @@ package dataBase
 
 import (
 	"github.com/go-pg/pg"
-	"httpService/models"
+	"httpService/internal/models"
 	"sync"
 )
 
 type DataStore interface {
-	InitDB()
 	AddFetchTask(task *models.FetchTask) (*models.FetchTask, error)
 	DeleteFetchTask(taskId int) error
 	GetAllTasks() ([]*models.FetchTask, error)
 	GetFetchTask(taskId int) (*models.FetchTask, error)
-	CheckConnection() error
 }
 
 type MapStore struct {
@@ -23,4 +21,12 @@ type MapStore struct {
 
 type PostgresDB struct {
 	pgdb *pg.DB
+}
+
+func NewDataStore(config ConfigDB) DataStore {
+	if config.StoreType == "postgres" {
+		return NewPGStore(config)
+	} else {
+		return NewMapStore()
+	}
 }

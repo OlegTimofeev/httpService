@@ -7,10 +7,3 @@ type FetchTask struct {
 	Headers map[string][]string `json:"headers"`
 	Body    string              `json:"body"`
 }
-
-type UserResponse struct {
-	FetchTaskId int                 `json:"fetch_task_id"`
-	HttpStatus  int                 `json:"http_status"`
-	Headers     map[string][]string `json:"headers"`
-	BodyLen     int                 `json:"body_len"`
-}

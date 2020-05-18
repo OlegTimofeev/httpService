@@ -1,6 +1,6 @@
 FROM golang:1.14 as builder
 
-COPY . /build
+COPY ../tools /build
 
 WORKDIR /build
 

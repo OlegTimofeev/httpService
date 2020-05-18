@@ -1,10 +1,13 @@
 package httpService
 
 import (
+	"errors"
 	client2 "github.com/go-openapi/runtime/client"
 	util2 "github.com/itimofeev/go-util"
 	"github.com/stretchr/testify/suite"
-	"httpService/api"
+	"httpService/internal"
+	"httpService/internal/dataBase"
+	"httpService/internal/request"
 	"httpService/service/client"
 	"httpService/service/client/operations"
 	models2 "httpService/service/models"
@@ -13,7 +16,18 @@ import (
 )
 
 func (hs *HandlersSuit) SetupTest() {
-	httpClient := &http.Client{Transport: util2.NewTransport(api.InitSWHandler().GetHandler())}
+	config := dataBase.ConfigDB{
+		User:      "admin",
+		Password:  "password",
+		Dbname:    "httpService",
+		StoreType: "postgres",
+	}
+	hs.taskService = internal.NewTaskService(config)
+	hs.requester = new(request.TestRequester)
+	hs.taskService.SetRequester(hs.requester)
+	response := new(models2.TaskResponse)
+	hs.requester.SetResponse(response)
+	httpClient := &http.Client{Transport: util2.NewTransport(hs.taskService.Server.GetHandler())}
 	c := client2.NewWithClient(client.DefaultHost, client.DefaultBasePath, client.DefaultSchemes, httpClient)
 	hs.taskClient = client.New(c, nil)
 	//from initialization
@@ -23,8 +37,10 @@ func (hs *HandlersSuit) SetupTest() {
 }
 
 type HandlersSuit struct {
-	task       models2.FetchTask
-	taskClient *client.FetchtaskHandlingService
+	task        models2.FetchTask
+	taskService *internal.TaskService
+	taskClient  *client.FetchtaskHandlingService
+	requester   *request.TestRequester
 	suite.Suite
 }
 
@@ -36,6 +52,18 @@ func (hs *HandlersSuit) TestAddFetchTask() {
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
+}
+
+func (hs *HandlersSuit) TestGetResponseError() {
+	hs.requester.SetResponse(nil)
+	hs.requester.SetError(errors.New("error : unable to get response"))
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+		Method: hs.task.Method,
+		Path:   hs.task.Path,
+		Body:   hs.task.Body,
+	}))
+	hs.Require().Error(err)
+	hs.Require().Nil(getResponseOK)
 }
 
 func (hs *HandlersSuit) TestGetFetchTask() {

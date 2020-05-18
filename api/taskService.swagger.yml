@@ -22,11 +22,11 @@ paths:
           schema:
             type: object
             properties:
-              Method:
+              method:
                 type: string
-              Path:
+              path:
                 type: string
-              Headers:
+              headers:
                 type: object
                 additionalProperties:
                   type: array
@@ -59,7 +59,7 @@ paths:
             }
         '500':
           description: Techical problems with server.
-  /deleteTask/{taskID}:
+  /Task/{taskID}:
     delete:
       summary: delete task
       operationId: deleteFetchTask
@@ -79,7 +79,6 @@ paths:
           description: A task with the current ID was not found.
         '500':
           description: No connection to database.
-  /getTask/{taskID}:
     get:
       summary: get task
       operationId: getTask
@@ -106,38 +105,38 @@ definitions:
   TaskResponse:
     type: object
     properties:
-      ID:
+      id:
         type: integer
         format: int
-      HttpStatus:
+      httpStatus:
         type: integer
         format: int
-      Method:
+      method:
         type: string
-      Path:
+      path:
         type: string
-      Headers:
+      headers:
         type: object
         additionalProperties:
           type: array
           items:
             type: string
-      BodyLenght:
+      bodyLenght:
         type: integer
         format: int
   FetchTask:
     type: object
     properties:
-      ID:
+      id:
         type: integer
         format: int
-      Method:
+      method:
         type: string
-      Path:
+      path:
         type: string
-      Body:
+      body:
         type: string
-      Headers:
+      headers:
         type: object
         additionalProperties:
           type: array
