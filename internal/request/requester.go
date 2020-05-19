@@ -9,15 +9,15 @@ import (
 	"time"
 )
 
-func NewRequester() *Request {
-	rqst := new(Request)
+func NewRequester() *HTTPRequester {
+	rqst := new(HTTPRequester)
 	rqst.client = http.Client{
 		Timeout: 15 * time.Second,
 	}
 	return rqst
 }
 
-func (requester *Request) DoRequest(ft models.FetchTask) (*models2.TaskResponse, error) {
+func (requester *HTTPRequester) DoRequest(ft models.FetchTask) (*models2.TaskResponse, error) {
 	req, err := http.NewRequest(ft.Method, ft.Path, strings.NewReader(ft.Body))
 	if err != nil {
 		return nil, err

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/suite"
 	"httpService/internal"
 	"httpService/internal/dataBase"
-	"httpService/internal/request"
 	"httpService/service/client"
 	"httpService/service/client/operations"
 	models2 "httpService/service/models"
@@ -23,7 +22,7 @@ func (hs *HandlersSuit) SetupTest() {
 		StoreType: "postgres",
 	}
 	hs.taskService = internal.NewTaskService(config)
-	hs.requester = new(request.TestRequester)
+	hs.requester = new(TestRequester)
 	hs.taskService.SetRequester(hs.requester)
 	response := new(models2.TaskResponse)
 	hs.requester.SetResponse(response)
@@ -40,7 +39,7 @@ type HandlersSuit struct {
 	task        models2.FetchTask
 	taskService *internal.TaskService
 	taskClient  *client.FetchtaskHandlingService
-	requester   *request.TestRequester
+	requester   *TestRequester
 	suite.Suite
 }
 
