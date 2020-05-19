@@ -1,0 +1,36 @@
+version: '3'
+services:
+#  httpservice:
+#    image: httpservice:latests
+#    container_name: httpserivce
+#    build: ""
+#    ports:
+#      - 8000:8000
+#    restart: on-failure
+#    volumes:
+#      - api:/usr/src/build
+#    networks:
+#      - fullstack
+  db:
+    image: postgres:latest
+    container_name: dbHttp
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - DATABASE_HOST=${DB_HOST}
+    ports:
+      - "5432:5432"
+    volumes:
+      - database_postgres:/var/lib/postgresql/data
+    networks:
+      - fullstack
+
+
+volumes:
+  database_postgres:
+  api:
+
+networks:
+  fullstack:
+    driver: bridge
