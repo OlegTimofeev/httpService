@@ -14,8 +14,10 @@ func main() {
 		Password:  "password",
 		Dbname:    "httpService",
 		StoreType: "postgres",
+		PoolSize:  3,
 	}
 	TaskService = internal.NewTaskService(config)
+	TaskService.CreateWorkersPool(config)
 	defer TaskService.Server.Shutdown()
 	if err := TaskService.Server.Serve(); err != nil {
 		log.Fatalln(err)

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"httpService/internal"
 	"httpService/internal/dataBase"
+	"httpService/internal/models"
 	"httpService/service/client"
 	"httpService/service/client/operations"
 	models2 "httpService/service/models"
@@ -20,11 +21,13 @@ func (hs *HandlersSuit) SetupTest() {
 		Password:  "password",
 		Dbname:    "httpService",
 		StoreType: "postgres",
+		PoolSize:  1,
 	}
 	hs.taskService = internal.NewTaskService(config)
+	hs.taskService.CreateWorkersPool(config)
 	hs.requester = new(TestRequester)
 	hs.taskService.SetRequester(hs.requester)
-	response := new(models2.TaskResponse)
+	response := new(models.TaskResponse)
 	hs.requester.SetResponse(response)
 	httpClient := &http.Client{Transport: util2.NewTransport(hs.taskService.Server.GetHandler())}
 	c := client2.NewWithClient(client.DefaultHost, client.DefaultBasePath, client.DefaultSchemes, httpClient)

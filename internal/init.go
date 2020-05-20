@@ -3,6 +3,7 @@ package internal
 import (
 	"github.com/go-openapi/loads"
 	"httpService/internal/dataBase"
+	"httpService/internal/models"
 	"httpService/internal/request"
 	"httpService/service/restapi"
 	"httpService/service/restapi/operations"
@@ -30,18 +31,29 @@ func initServer() *restapi.Server {
 }
 
 type TaskService struct {
-	Store     dataBase.DataStore
-	Requester request.Requester
-	Server    *restapi.Server
+	TaskPool     chan models.FetchTask
+	ResponsePool chan *models.TaskResponse
+	Store        dataBase.DataStore
+	Requester    request.Requester
+	Server       *restapi.Server
 }
 
 func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	taskService = &TaskService{
-		Server:    initServer(),
-		Requester: request.NewRequester(),
-		Store:     dataBase.NewDataStore(config),
+		TaskPool:     make(chan models.FetchTask, config.PoolSize),
+		ResponsePool: make(chan *models.TaskResponse, config.PoolSize),
+		Server:       initServer(),
+		Requester:    request.NewRequester(),
+		Store:        dataBase.NewDataStore(config),
 	}
 	return taskService
+}
+
+func (ts *TaskService) CreateWorkersPool(config dataBase.ConfigDB) {
+	for i := 1; i < config.PoolSize; i++ {
+		go Worker(taskService.TaskPool, taskService.ResponsePool)
+		go Saver(taskService.ResponsePool)
+	}
 }
 
 func (ts *TaskService) SetRequester(rm request.Requester) {

@@ -11,6 +11,8 @@ type DataStore interface {
 	DeleteFetchTask(taskId int) error
 	GetAllTasks() ([]*models.FetchTask, error)
 	GetFetchTask(taskId int) (*models.FetchTask, error)
+	GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error)
+	AddTaskResponse(res *models.TaskResponse) error
 }
 
 type MapStore struct {

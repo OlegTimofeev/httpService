@@ -56,3 +56,10 @@ func (ms *MapStore) GetTaskID() int {
 	ms.mutex.Unlock()
 	return ms.TaskID
 }
+
+func (ms *MapStore) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {
+	return nil, nil
+}
+func (ms *MapStore) AddTaskResponse(res *models.TaskResponse) error {
+	return nil
+}

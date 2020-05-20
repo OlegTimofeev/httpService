@@ -5,4 +5,5 @@ type ConfigDB struct {
 	Password  string
 	Dbname    string
 	StoreType string
+	PoolSize  int
 }

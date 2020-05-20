@@ -30,6 +30,18 @@ func NewPGStore(config ConfigDB) *PostgresDB {
 		}); err != nil {
 			return err
 		}
+		if err := db.pgdb.DropTable((*models.TaskResponse)(nil), &orm.DropTableOptions{
+			IfExists: true,
+			Cascade:  true,
+		}); err != nil {
+			return err
+		}
+		if err := db.pgdb.CreateTable((*models.TaskResponse)(nil), &orm.CreateTableOptions{
+			IfNotExists:   true,
+			FKConstraints: true,
+		}); err != nil {
+			return err
+		}
 		if cons := db.pgdb.PoolStats().Hits; cons < 1 {
 			return errors.New("no connection")
 		}
@@ -38,13 +50,6 @@ func NewPGStore(config ConfigDB) *PostgresDB {
 		log.Fatal(err)
 	}
 	return db
-}
-
-func (db *PostgresDB) CheckConnection() error {
-	if cons := db.pgdb.PoolStats().Hits; cons < 1 {
-		return errors.New("")
-	}
-	return nil
 }
 
 func (db *PostgresDB) AddFetchTask(task *models.FetchTask) (*models.FetchTask, error) {
@@ -76,4 +81,28 @@ func (db *PostgresDB) DeleteFetchTask(taskId int) error {
 		return err
 	}
 	return nil
+}
+
+func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) error {
+	return db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
+		tr := models.TaskResponse{FetchTaskID: res.FetchTaskID}
+		if err := db.pgdb.Select(&tr); err != nil {
+			return err
+		}
+		if err := db.pgdb.Delete(&tr); err != nil {
+			return err
+		}
+		if err := db.pgdb.Insert(res); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {
+	tr := models.TaskResponse{FetchTaskID: taskId}
+	if err := db.pgdb.Select(&tr); err != nil {
+		return nil, err
+	}
+	return &tr, nil
 }
