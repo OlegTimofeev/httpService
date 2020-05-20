@@ -86,8 +86,7 @@ func (db *PostgresDB) DeleteFetchTask(taskId int) error {
 func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) error {
 	return db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
 		tr := models.TaskResponse{FetchTaskID: res.FetchTaskID}
-		if err := db.pgdb.ForceDelete(&tr); err != nil {
-			return err
+		if err := db.pgdb.Delete(&tr); err != nil {
 		}
 		if err := db.pgdb.Insert(res); err != nil {
 			return err
