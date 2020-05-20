@@ -18,7 +18,9 @@ func GetResponse(params operations.CreateFetchTaskParams) middleware.Responder {
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")
 	}
-	taskService.TaskPool <- *ft
+	taskService.TaskPool <- ft
+	go Worker(taskService.TaskPool, taskService.ResponsePool)
+	taskService.Store.AddTaskResponse(<-taskService.ResponsePool)
 	taskResponse, err := taskService.Store.GetTaskResponseByFtID(ft.ID)
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to get response")
@@ -55,17 +57,14 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 	return operations.NewGetTaskOK().WithPayload(task.ConvertForResp())
 }
 
-func Worker(tasks <-chan models.FetchTask, response chan<- *models.TaskResponse) {
+func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
 	for task := range tasks {
-		res, err := taskService.Requester.DoRequest(task)
+		res, err := taskService.Requester.DoRequest(*task)
 		if err != nil {
 			response <- nil
 			return
 		}
+		res.FetchTaskID = task.ID
 		response <- res
 	}
-}
-
-func Saver(response <-chan *models.TaskResponse) {
-	taskService.Store.AddTaskResponse(<-response)
 }

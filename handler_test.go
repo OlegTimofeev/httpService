@@ -24,7 +24,6 @@ func (hs *HandlersSuit) SetupTest() {
 		PoolSize:  1,
 	}
 	hs.taskService = internal.NewTaskService(config)
-	hs.taskService.CreateWorkersPool(config)
 	hs.requester = new(TestRequester)
 	hs.taskService.SetRequester(hs.requester)
 	response := new(models.TaskResponse)

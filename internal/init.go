@@ -31,7 +31,7 @@ func initServer() *restapi.Server {
 }
 
 type TaskService struct {
-	TaskPool     chan models.FetchTask
+	TaskPool     chan *models.FetchTask
 	ResponsePool chan *models.TaskResponse
 	Store        dataBase.DataStore
 	Requester    request.Requester
@@ -40,20 +40,13 @@ type TaskService struct {
 
 func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	taskService = &TaskService{
-		TaskPool:     make(chan models.FetchTask, config.PoolSize),
+		TaskPool:     make(chan *models.FetchTask, config.PoolSize),
 		ResponsePool: make(chan *models.TaskResponse, config.PoolSize),
 		Server:       initServer(),
 		Requester:    request.NewRequester(),
 		Store:        dataBase.NewDataStore(config),
 	}
 	return taskService
-}
-
-func (ts *TaskService) CreateWorkersPool(config dataBase.ConfigDB) {
-	for i := 1; i < config.PoolSize; i++ {
-		go Worker(taskService.TaskPool, taskService.ResponsePool)
-		go Saver(taskService.ResponsePool)
-	}
 }
 
 func (ts *TaskService) SetRequester(rm request.Requester) {
