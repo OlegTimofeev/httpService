@@ -31,22 +31,31 @@ func initServer() *restapi.Server {
 }
 
 type TaskService struct {
-	TaskPool     chan *models.FetchTask
-	ResponsePool chan *models.TaskResponse
-	Store        dataBase.DataStore
-	Requester    request.Requester
-	Server       *restapi.Server
+	TasksChan     chan *models.FetchTask
+	ResponsesChan chan *models.TaskResponse
+	ErrorsChan    chan error
+	Store         dataBase.DataStore
+	Requester     request.Requester
+	Server        *restapi.Server
 }
 
 func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	taskService = &TaskService{
-		TaskPool:     make(chan *models.FetchTask, config.PoolSize),
-		ResponsePool: make(chan *models.TaskResponse, config.PoolSize),
-		Server:       initServer(),
-		Requester:    request.NewRequester(),
-		Store:        dataBase.NewDataStore(config),
+		TasksChan:     make(chan *models.FetchTask),
+		ErrorsChan:    make(chan error),
+		ResponsesChan: make(chan *models.TaskResponse),
+		Server:        initServer(),
+		Requester:     request.NewRequester(),
+		Store:         dataBase.NewDataStore(config),
 	}
 	return taskService
+}
+
+func (ts *TaskService) InitWorkers(config dataBase.ConfigDB) {
+	for i := 0; i < config.PoolSize; i++ {
+		go Worker(taskService.TasksChan, taskService.ResponsesChan, taskService.ErrorsChan)
+		go Saver(taskService.ResponsesChan, taskService.ErrorsChan)
+	}
 }
 
 func (ts *TaskService) SetRequester(rm request.Requester) {

@@ -17,6 +17,7 @@ func main() {
 		PoolSize:  3,
 	}
 	TaskService = internal.NewTaskService(config)
+	TaskService.InitWorkers(config)
 	defer TaskService.Server.Shutdown()
 	if err := TaskService.Server.Serve(); err != nil {
 		log.Fatalln(err)

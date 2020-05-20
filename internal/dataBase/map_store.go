@@ -60,6 +60,10 @@ func (ms *MapStore) GetTaskID() int {
 func (ms *MapStore) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {
 	return nil, nil
 }
-func (ms *MapStore) AddTaskResponse(res *models.TaskResponse) error {
+func (ms *MapStore) AddTaskResponse(res *models.TaskResponse) (*models.TaskResponse, error) {
+	return nil, nil
+}
+
+func (ms *MapStore) UpdateFetchTask(task *models.FetchTask) error {
 	return nil
 }

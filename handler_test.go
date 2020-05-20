@@ -24,6 +24,7 @@ func (hs *HandlersSuit) SetupTest() {
 		PoolSize:  1,
 	}
 	hs.taskService = internal.NewTaskService(config)
+	hs.taskService.InitWorkers(config)
 	hs.requester = new(TestRequester)
 	hs.taskService.SetRequester(hs.requester)
 	response := new(models.TaskResponse)
@@ -76,9 +77,9 @@ func (hs *HandlersSuit) TestGetFetchTask() {
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
 	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Method: "hs.task.Method",
+		Path:   "hs.task.Path",
+		Body:   "hs.task.Body",
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)

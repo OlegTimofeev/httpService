@@ -59,6 +59,13 @@ func (db *PostgresDB) AddFetchTask(task *models.FetchTask) (*models.FetchTask, e
 	return task, nil
 }
 
+func (db *PostgresDB) UpdateFetchTask(task *models.FetchTask) error {
+	if err := db.pgdb.Update(&task); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (db *PostgresDB) GetFetchTask(taskId int) (*models.FetchTask, error) {
 	ft := models.FetchTask{ID: taskId}
 	if err := db.pgdb.Select(&ft); err != nil {
@@ -83,16 +90,9 @@ func (db *PostgresDB) DeleteFetchTask(taskId int) error {
 	return nil
 }
 
-func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) error {
-	return db.pgdb.RunInTransaction(func(tx *pg.Tx) error {
-		tr := models.TaskResponse{FetchTaskID: res.FetchTaskID}
-		if err := db.pgdb.Delete(&tr); err != nil {
-		}
-		if err := db.pgdb.Insert(res); err != nil {
-			return err
-		}
-		return nil
-	})
+func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) (*models.TaskResponse, error) {
+	err := db.pgdb.Insert(res)
+	return res, err
 }
 
 func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {

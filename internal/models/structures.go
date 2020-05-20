@@ -2,12 +2,19 @@ package models
 
 import models2 "httpService/service/models"
 
+const (
+	StatusNew        = "New"
+	StatusInProgress = "InProgress"
+	StatusCompleted  = "Completed"
+)
+
 type FetchTask struct {
 	ID      int                 `json:"task_id"`
 	Method  string              `json:"method"`
 	Path    string              `json:"path"`
 	Headers map[string][]string `json:"headers"`
 	Body    string              `json:"body"`
+	Status  string              `json:"status"`
 }
 
 func (task *FetchTask) ConvertForResp() *models2.FetchTask {

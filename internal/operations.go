@@ -14,15 +14,22 @@ func GetResponse(params operations.CreateFetchTaskParams) middleware.Responder {
 	ft.Path = params.Task.Path
 	ft.Headers = params.Task.Headers
 	ft.Method = params.Task.Method
+	ft.Status = models.StatusNew
 	ft, err := taskService.Store.AddFetchTask(ft)
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")
 	}
-	taskService.TaskPool <- ft
-	go Worker(taskService.TaskPool, taskService.ResponsePool)
-	taskService.Store.AddTaskResponse(<-taskService.ResponsePool)
+	taskService.TasksChan <- ft
+	err = <-taskService.ErrorsChan
+	if err != nil {
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable to get response")
+	}
 	taskResponse, err := taskService.Store.GetTaskResponseByFtID(ft.ID)
 	if err != nil {
+		return middleware.Error(http.StatusInternalServerError, "Error : Unable to get response")
+	}
+	ft.Status = models.StatusCompleted
+	if err = taskService.Store.UpdateFetchTask(ft); err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to get response")
 	}
 	return operations.NewCreateFetchTaskOK().WithPayload(taskResponse.ConvertForResp())
@@ -57,14 +64,28 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 	return operations.NewGetTaskOK().WithPayload(task.ConvertForResp())
 }
 
-func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
+func Worker(tasks chan *models.FetchTask, response chan *models.TaskResponse, errors chan error) {
 	for task := range tasks {
 		res, err := taskService.Requester.DoRequest(*task)
 		if err != nil {
-			response <- nil
+			errors <- err
+			return
+		}
+		task.Status = models.StatusInProgress
+		if err = taskService.Store.UpdateFetchTask(task); err != nil {
+			errors <- err
 			return
 		}
 		res.FetchTaskID = task.ID
 		response <- res
 	}
+}
+
+func Saver(response chan *models.TaskResponse, errors chan error) {
+	_, err := taskService.Store.AddTaskResponse(<-response)
+	if err != nil {
+		errors <- err
+		return
+	}
+	errors <- nil
 }
