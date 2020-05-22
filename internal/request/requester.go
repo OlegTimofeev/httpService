@@ -33,12 +33,9 @@ func (requester *HTTPRequester) DoRequest(ft models.FetchTask) (*models.TaskResp
 	}
 	bodyString := string(body)
 	taskResponse := models.TaskResponse{
-		FetchTaskID: ft.ID,
-		Status:      resp.StatusCode,
-		Method:      ft.Method,
-		Path:        ft.Path,
-		BodyLen:     len(bodyString),
-		Headers:     resp.Header,
+		ID:      ft.ID,
+		Status:  resp.StatusCode,
+		BodyLen: len(bodyString),
 	}
 	return &taskResponse, nil
 }

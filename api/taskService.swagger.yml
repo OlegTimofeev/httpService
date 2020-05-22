@@ -170,22 +170,9 @@ definitions:
       response:
         type: object
         properties:
-          id:
-            type: integer
-            format: int
           httpStatus:
             type: integer
             format: int
-          method:
-            type: string
-          path:
-            type: string
-          headers:
-            type: object
-            additionalProperties:
-              type: array
-              items:
-                type: string
           bodyLenght:
             type: integer
             format: int

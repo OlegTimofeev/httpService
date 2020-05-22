@@ -69,30 +69,28 @@ func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse
 		res, err := taskService.Requester.DoRequest(*task)
 		if err != nil {
 			response <- &models.TaskResponse{
-				FetchTaskID: task.ID,
-				Err:         err.Error(),
+				ID:  task.ID,
+				Err: err.Error(),
 			}
 			return
 		}
-		res.FetchTaskID = task.ID
+		res.ID = task.ID
 		response <- res
 		task.Status = models.StatusCompleted
 		taskService.Store.UpdateFetchTask(*task)
 	}
 }
 
-func Saver(response <-chan *models.TaskResponse) {
-	taskService.Store.AddTaskResponse(<-response)
+func Saver(responses <-chan *models.TaskResponse) {
+	for response := range responses {
+		taskService.Store.AddTaskResponse(response)
+	}
 }
 
 func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse {
 	return &models2.FullTaskResponse{
-		ID:         response.ID,
 		BodyLenght: response.BodyLenght,
-		Method:     response.Method,
 		HTTPStatus: response.HTTPStatus,
-		Headers:    response.Headers,
-		Path:       response.Path,
 	}
 }
 

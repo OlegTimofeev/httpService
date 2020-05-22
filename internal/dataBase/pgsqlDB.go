@@ -96,8 +96,8 @@ func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) (*models.TaskRes
 }
 
 func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {
-	tr := models.TaskResponse{FetchTaskID: taskId}
-	if err := db.pgdb.Model(&tr).Select(); err != nil {
+	tr := models.TaskResponse{ID: taskId}
+	if err := db.pgdb.Select(&tr); err != nil {
 		return nil, err
 	}
 	return &tr, nil

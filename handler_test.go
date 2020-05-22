@@ -72,23 +72,28 @@ func (hs *HandlersSuit) TestGetResponseError() {
 }
 
 func (hs *HandlersSuit) TestGetFetchTask() {
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+	getResponseOK1, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
 		Method: hs.task.Method,
 		Path:   hs.task.Path,
 		Body:   hs.task.Body,
 	}))
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
-	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+	hs.Require().NotNil(getResponseOK1)
+	getResponseOK2, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
 		Method: "hs.task.Method",
 		Path:   "hs.task.Path",
 		Body:   "hs.task.Body",
 	}))
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
-	getTaskOK, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(int64(1)))
+	hs.Require().NotNil(getResponseOK2)
+	getTaskOK1, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK1.Payload.ID))
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getTaskOK)
+	hs.Require().NotNil(getTaskOK1)
+	hs.EqualValues(getResponseOK1.Payload.ID, getTaskOK1.Payload.Request.ID)
+	getTaskOK2, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK2.Payload.ID))
+	hs.Require().NoError(err)
+	hs.Require().NotNil(getTaskOK2)
+	hs.EqualValues(getResponseOK2.Payload.ID, getTaskOK2.Payload.Request.ID)
 }
 
 func (hs *HandlersSuit) TestGetAllFetchTasks() {
