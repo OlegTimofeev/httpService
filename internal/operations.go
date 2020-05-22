@@ -54,7 +54,9 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
 	}
 	if resp.Err != "" {
-		return middleware.Error(http.StatusNotFound, "no response for this task")
+		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
+			Request: ConvertToRequest(task.ConvertToSwaggerModel()),
+		})
 	}
 	return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 		Request:  ConvertToRequest(task.ConvertToSwaggerModel()),
