@@ -59,7 +59,7 @@ func (db *PostgresDB) AddFetchTask(task *models.FetchTask) (*models.FetchTask, e
 	return task, nil
 }
 
-func (db *PostgresDB) UpdateFetchTask(task *models.FetchTask) error {
+func (db *PostgresDB) UpdateFetchTask(task models.FetchTask) error {
 	if err := db.pgdb.Update(&task); err != nil {
 		return err
 	}

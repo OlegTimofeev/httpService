@@ -17,14 +17,14 @@ type FetchTask struct {
 	Status  string              `json:"status"`
 }
 
-func (task *FetchTask) ConvertForResp() *models2.FetchTask {
-	ftResp := new(models2.FetchTask)
-	ftResp.Method = task.Method
-	ftResp.ID = int64(task.ID)
-	ftResp.Body = task.Body
-	ftResp.Headers = task.Headers
-	ftResp.Path = task.Path
-	return ftResp
+func (task *FetchTask) ConvertToSwaggerModel() *models2.FetchTask {
+	return &models2.FetchTask{
+		Method:   task.Method,
+		ID:       int64(task.ID),
+		Body:     task.Body,
+		Progress: task.Status,
+		Headers:  task.Headers,
+		Path:     task.Path}
 }
 
 type TaskResponse struct {
@@ -35,15 +35,16 @@ type TaskResponse struct {
 	Headers     map[string][]string `json:"headers"`
 	BodyLen     int                 `json:"body_len"`
 	FetchTaskID int                 `json:"ft_id"`
+	Err         string              `json:"err"`
 }
 
-func (tr *TaskResponse) ConvertForResp() *models2.TaskResponse {
-	resp := new(models2.TaskResponse)
-	resp.ID = int64(tr.FetchTaskID)
-	resp.BodyLenght = int64(tr.BodyLen)
-	resp.HTTPStatus = int64(tr.Status)
-	resp.Path = tr.Path
-	resp.Method = tr.Method
-	resp.Headers = tr.Headers
-	return resp
+func (tr *TaskResponse) ConvertToSwaggerModel() *models2.TaskResponse {
+	return &models2.TaskResponse{
+		ID:         int64(tr.FetchTaskID),
+		BodyLenght: int64(tr.BodyLen),
+		HTTPStatus: int64(tr.Status),
+		Path:       tr.Path,
+		Method:     tr.Method,
+		Headers:    tr.Headers,
+	}
 }

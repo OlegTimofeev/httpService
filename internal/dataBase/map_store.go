@@ -64,6 +64,6 @@ func (ms *MapStore) AddTaskResponse(res *models.TaskResponse) (*models.TaskRespo
 	return nil, nil
 }
 
-func (ms *MapStore) UpdateFetchTask(task *models.FetchTask) error {
+func (ms *MapStore) UpdateFetchTask(task models.FetchTask) error {
 	return nil
 }

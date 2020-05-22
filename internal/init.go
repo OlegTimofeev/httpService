@@ -20,7 +20,7 @@ func initServer() *restapi.Server {
 	api := operations.NewFetchtaskHandlingServiceAPI(swaggerSpec)
 	server := restapi.NewServer(api)
 	server.Port = 8080
-	api.CreateFetchTaskHandler = operations.CreateFetchTaskHandlerFunc(GetResponse)
+	api.CreateFetchTaskHandler = operations.CreateFetchTaskHandlerFunc(CreateFetchTask)
 	api.DeleteFetchTaskHandler = operations.DeleteFetchTaskHandlerFunc(DeleteFT)
 	api.GetAllTasksHandler = operations.GetAllTasksHandlerFunc(GetTasks)
 	api.GetTaskHandler = operations.GetTaskHandlerFunc(GetTask)
@@ -33,7 +33,6 @@ func initServer() *restapi.Server {
 type TaskService struct {
 	TasksChan     chan *models.FetchTask
 	ResponsesChan chan *models.TaskResponse
-	ErrorsChan    chan error
 	Store         dataBase.DataStore
 	Requester     request.Requester
 	Server        *restapi.Server
@@ -42,7 +41,6 @@ type TaskService struct {
 func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	taskService = &TaskService{
 		TasksChan:     make(chan *models.FetchTask),
-		ErrorsChan:    make(chan error),
 		ResponsesChan: make(chan *models.TaskResponse),
 		Server:        initServer(),
 		Requester:     request.NewRequester(),
@@ -51,10 +49,10 @@ func NewTaskService(config dataBase.ConfigDB) *TaskService {
 	return taskService
 }
 
-func (ts *TaskService) InitWorkers(config dataBase.ConfigDB) {
+func (ts *TaskService) InitRoutines(config dataBase.ConfigDB) {
 	for i := 0; i < config.PoolSize; i++ {
-		go Worker(taskService.TasksChan, taskService.ResponsesChan, taskService.ErrorsChan)
-		go Saver(taskService.ResponsesChan, taskService.ErrorsChan)
+		go Worker(taskService.TasksChan, taskService.ResponsesChan)
+		go Saver(taskService.ResponsesChan)
 	}
 }
 
