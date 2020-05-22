@@ -13,7 +13,6 @@ import (
 	models2 "httpService/service/models"
 	"net/http"
 	"testing"
-	"time"
 )
 
 func (hs *HandlersSuit) SetupTest() {
@@ -25,9 +24,15 @@ func (hs *HandlersSuit) SetupTest() {
 		PoolSize:  1,
 	}
 	hs.taskService = internal.NewTaskService(config)
-	hs.taskService.InitRoutines(config)
 	hs.requester = new(TestRequester)
 	hs.taskService.SetRequester(hs.requester)
+	th := new(TestTaskHandler)
+	th.responsesChan = hs.taskService.ResponsesChan
+	th.tasksChan = hs.taskService.TasksChan
+	th.store = hs.taskService.Store
+	th.Init(th.WorkerTest, th.SaverTest, config)
+	hs.taskHandler = th
+	hs.taskService.SetTaskHandler(hs.taskHandler)
 	response := new(models.TaskResponse)
 	hs.requester.SetResponse(response)
 	httpClient := &http.Client{Transport: util2.NewTransport(hs.taskService.Server.GetHandler())}
@@ -44,6 +49,7 @@ type HandlersSuit struct {
 	taskService *internal.TaskService
 	taskClient  *client.FetchtaskHandlingService
 	requester   *TestRequester
+	taskHandler *TestTaskHandler
 	suite.Suite
 }
 
@@ -58,23 +64,23 @@ func (hs *HandlersSuit) TestAddFetchTask() {
 }
 
 func (hs *HandlersSuit) TestGetTaskError() {
-	hs.requester.SetResponse(nil)
-	hs.requester.SetError(errors.New("error : unable to get response"))
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+	hs.taskHandler.HaveError(true)
+	getResponseOK, errResp := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
 		Method: hs.task.Method,
 		Path:   hs.task.Path,
 		Body:   hs.task.Body,
 	}))
-	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
+	hs.Require().NoError(errResp)
 	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
-	time.Sleep(1 * time.Second)
 	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().NoError(err)
 	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
+	hs.Require().NoError(err)
+
 }
 
 func (hs *HandlersSuit) TestGetTaskWithError() {
+	hs.taskHandler.HaveError(true)
 	hs.requester.SetResponse(nil)
 	hs.requester.SetError(errors.New("error : unable to get response"))
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
@@ -82,11 +88,12 @@ func (hs *HandlersSuit) TestGetTaskWithError() {
 		Path:   hs.task.Path,
 		Body:   hs.task.Body,
 	}))
-	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
+	hs.Require().NoError(err)
 	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().Error(err)
 	hs.Require().Nil(getTaskOk)
+	hs.Require().NoError(err)
+
 }
 
 func (hs *HandlersSuit) TestGetFetchTask() {

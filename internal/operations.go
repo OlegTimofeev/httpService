@@ -69,8 +69,6 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 
 func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
 	for task := range tasks {
-		task.Status = models.StatusInProgress
-		taskService.Store.UpdateFetchTask(*task)
 		res, err := taskService.Requester.DoRequest(*task)
 		if err != nil {
 			task.Status = models.StatusError
