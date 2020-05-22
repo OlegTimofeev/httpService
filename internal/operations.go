@@ -49,14 +49,17 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 	if err != nil {
 		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
 	}
+	if task.Status == models.StatusInProgress {
+		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
+			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
+	}
 	resp, err := taskService.Store.GetTaskResponseByFtID(id)
 	if err != nil {
 		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
 	}
-	if resp.Err != "" {
+	if task.Status == models.StatusError {
 		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
-			Request: ConvertToRequest(task.ConvertToSwaggerModel()),
-		})
+			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
 	}
 	return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 		Request:  ConvertToRequest(task.ConvertToSwaggerModel()),
@@ -70,6 +73,8 @@ func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse
 		taskService.Store.UpdateFetchTask(*task)
 		res, err := taskService.Requester.DoRequest(*task)
 		if err != nil {
+			task.Status = models.StatusError
+			taskService.Store.UpdateFetchTask(*task)
 			response <- &models.TaskResponse{
 				ID:  task.ID,
 				Err: err.Error(),

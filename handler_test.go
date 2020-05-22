@@ -13,6 +13,7 @@ import (
 	models2 "httpService/service/models"
 	"net/http"
 	"testing"
+	"time"
 )
 
 func (hs *HandlersSuit) SetupTest() {
@@ -34,7 +35,7 @@ func (hs *HandlersSuit) SetupTest() {
 	hs.taskClient = client.New(c, nil)
 	//from initialization
 	hs.task.Method = "POST"
-	hs.task.Path = "https://www.google.com/"
+	hs.task.Path = "https://123445"
 	hs.task.Body = ""
 }
 
@@ -56,7 +57,24 @@ func (hs *HandlersSuit) TestAddFetchTask() {
 	hs.Require().NotNil(getResponseOK)
 }
 
-func (hs *HandlersSuit) TestGetResponseError() {
+func (hs *HandlersSuit) TestGetTaskError() {
+	hs.requester.SetResponse(nil)
+	hs.requester.SetError(errors.New("error : unable to get response"))
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+		Method: hs.task.Method,
+		Path:   hs.task.Path,
+		Body:   hs.task.Body,
+	}))
+	hs.Require().NoError(err)
+	hs.Require().NotNil(getResponseOK)
+	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
+	time.Sleep(1 * time.Second)
+	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
+	hs.Require().NoError(err)
+	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
+}
+
+func (hs *HandlersSuit) TestGetTaskWithError() {
 	hs.requester.SetResponse(nil)
 	hs.requester.SetError(errors.New("error : unable to get response"))
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{

@@ -6,6 +6,7 @@ const (
 	StatusNew        = "New"
 	StatusInProgress = "InProgress"
 	StatusCompleted  = "Completed"
+	StatusError      = "Error"
 )
 
 type FetchTask struct {
