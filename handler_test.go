@@ -1,7 +1,6 @@
 package httpService
 
 import (
-	"errors"
 	client2 "github.com/go-openapi/runtime/client"
 	util2 "github.com/itimofeev/go-util"
 	"github.com/stretchr/testify/suite"
@@ -21,7 +20,7 @@ func (hs *HandlersSuit) SetupTest() {
 		Password:  "password",
 		Dbname:    "httpService",
 		StoreType: "postgres",
-		PoolSize:  1,
+		PoolSize:  2,
 	}
 	hs.taskService = internal.NewTaskService(config)
 	hs.requester = new(TestRequester)
@@ -31,17 +30,15 @@ func (hs *HandlersSuit) SetupTest() {
 	th.tasksChan = hs.taskService.TasksChan
 	th.store = hs.taskService.Store
 	th.Init(th.WorkerTest, th.SaverTest, config)
+	th.response = NewResponse()
 	hs.taskHandler = th
-	hs.taskService.SetTaskHandler(hs.taskHandler)
+	hs.taskService.SetTaskHandler(th)
 	response := new(models.TaskResponse)
 	hs.requester.SetResponse(response)
 	httpClient := &http.Client{Transport: util2.NewTransport(hs.taskService.Server.GetHandler())}
 	c := client2.NewWithClient(client.DefaultHost, client.DefaultBasePath, client.DefaultSchemes, httpClient)
 	hs.taskClient = client.New(c, nil)
-	//from initialization
-	hs.task.Method = "POST"
 	hs.task.Path = "https://123445"
-	hs.task.Body = ""
 }
 
 type HandlersSuit struct {
@@ -55,84 +52,63 @@ type HandlersSuit struct {
 
 func (hs *HandlersSuit) TestAddFetchTask() {
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Path: hs.task.Path,
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
 }
 
 func (hs *HandlersSuit) TestGetTaskError() {
-	hs.taskHandler.HaveError(true)
+	hs.taskHandler.response = NewResponseWithErr()
+	hs.taskHandler.SetTaskStatus(models.StatusError)
 	getResponseOK, errResp := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+
+		Path: hs.task.Path,
 	}))
 	hs.Require().NotNil(getResponseOK)
 	hs.Require().NoError(errResp)
 	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
 	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
 	hs.Require().NoError(err)
-
+	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
 }
 
 func (hs *HandlersSuit) TestGetTaskWithError() {
-	hs.taskHandler.HaveError(true)
-	hs.requester.SetResponse(nil)
-	hs.requester.SetError(errors.New("error : unable to get response"))
+	hs.taskHandler.response = NewResponseWithErr()
+	hs.taskHandler.SetTaskStatus(models.StatusError)
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Path: hs.task.Path,
 	}))
 	hs.Require().NotNil(getResponseOK)
 	hs.Require().NoError(err)
+	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
 	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().Nil(getTaskOk)
 	hs.Require().NoError(err)
-
+	hs.Require().Nil(getTaskOk.Payload.Response)
 }
 
 func (hs *HandlersSuit) TestGetFetchTask() {
-	getResponseOK1, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+	hs.taskHandler.SetTaskStatus(models.StatusCompleted)
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
+		Path: hs.task.Path,
 	}))
+	hs.Require().NotNil(getResponseOK)
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK1)
-	getResponseOK2, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: "hs.task.Method",
-		Path:   "hs.task.Path",
-		Body:   "hs.task.Body",
-	}))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK2)
-	getTaskOK1, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK1.Payload.ID))
+	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
+	getTaskOK1, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getTaskOK1)
-	hs.EqualValues(getResponseOK1.Payload.ID, getTaskOK1.Payload.Request.ID)
-	getTaskOK2, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK2.Payload.ID))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getTaskOK2)
-	hs.EqualValues(getResponseOK2.Payload.ID, getTaskOK2.Payload.Request.ID)
+	hs.EqualValues(getResponseOK.Payload.ID, getTaskOK1.Payload.Request.ID)
 }
 
 func (hs *HandlersSuit) TestGetAllFetchTasks() {
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Path: hs.task.Path,
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
 	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Path: hs.task.Path,
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
@@ -144,9 +120,7 @@ func (hs *HandlersSuit) TestGetAllFetchTasks() {
 
 func (hs *HandlersSuit) TestDeleteFetchTasks() {
 	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
+		Path: hs.task.Path,
 	}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)

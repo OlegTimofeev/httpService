@@ -8,7 +8,9 @@ import (
 type TestTaskHandler struct {
 	tasksChan     chan *models.FetchTask
 	responsesChan chan *models.TaskResponse
-	haveError     bool
+	error         string
+	response      *models.TaskResponse
+	taskStatus    string
 	store         dataBase.DataStore
 }
 
@@ -19,8 +21,16 @@ func (h *TestTaskHandler) Init(worker func(tasks <-chan *models.FetchTask, respo
 	}
 }
 
-func (h *TestTaskHandler) HaveError(f bool) {
-	h.haveError = f
+func (h *TestTaskHandler) SetError(err string) {
+	h.error = err
+}
+
+func (h *TestTaskHandler) SetTaskStatus(status string) {
+	h.taskStatus = status
+}
+
+func (h *TestTaskHandler) SetResponse(res *models.TaskResponse) {
+	h.response = res
 }
 
 func (h *TestTaskHandler) SetStore(s dataBase.DataStore) {
@@ -29,19 +39,9 @@ func (h *TestTaskHandler) SetStore(s dataBase.DataStore) {
 
 func (h *TestTaskHandler) WorkerTest(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
 	for task := range tasks {
-		if h.haveError {
-			task.Status = models.StatusError
-			h.store.UpdateFetchTask(*task)
-			response <- &models.TaskResponse{
-				ID:  task.ID,
-				Err: "err",
-			}
-			return
-		}
-		response <- &models.TaskResponse{
-			ID: task.ID,
-		}
-		task.Status = models.StatusCompleted
+		h.response.ID = task.ID
+		h.store.AddTaskResponse(h.response)
+		task.Status = h.taskStatus
 		h.store.UpdateFetchTask(*task)
 	}
 }
@@ -50,4 +50,15 @@ func (h *TestTaskHandler) SaverTest(responses <-chan *models.TaskResponse) {
 	for response := range responses {
 		h.store.AddTaskResponse(response)
 	}
+}
+
+func NewResponseWithErr() *models.TaskResponse {
+	return &models.TaskResponse{
+		ID:  1,
+		Err: "error",
+	}
+}
+
+func NewResponse() *models.TaskResponse {
+	return &models.TaskResponse{}
 }

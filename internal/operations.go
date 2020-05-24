@@ -53,13 +53,14 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
 	}
+	if task.Status == models.StatusError {
+		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
+			Request: ConvertToRequest(task.ConvertToSwaggerModel()),
+		})
+	}
 	resp, err := taskService.Store.GetTaskResponseByFtID(id)
 	if err != nil {
 		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
-	}
-	if task.Status == models.StatusError {
-		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
-			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
 	}
 	return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 		Request:  ConvertToRequest(task.ConvertToSwaggerModel()),
@@ -93,6 +94,9 @@ func Saver(responses <-chan *models.TaskResponse) {
 }
 
 func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse {
+	if response == nil {
+		return nil
+	}
 	return &models2.FullTaskResponse{
 		BodyLenght: response.BodyLenght,
 		HTTPStatus: response.HTTPStatus,
@@ -100,6 +104,9 @@ func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse
 }
 
 func ConvertToRequest(request *models2.FetchTask) *models2.FullTaskRequest {
+	if request == nil {
+		return nil
+	}
 	return &models2.FullTaskRequest{
 		ID:       request.ID,
 		Progress: request.Progress,
