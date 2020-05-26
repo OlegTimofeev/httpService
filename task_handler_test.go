@@ -40,7 +40,7 @@ func (h *TestTaskHandler) SetStore(s dataBase.DataStore) {
 func (h *TestTaskHandler) WorkerTest(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
 	for task := range tasks {
 		h.response.ID = task.ID
-		h.store.AddTaskResponse(h.response)
+		response <- h.response
 		task.Status = h.taskStatus
 		h.store.UpdateFetchTask(*task)
 	}
@@ -54,7 +54,6 @@ func (h *TestTaskHandler) SaverTest(responses <-chan *models.TaskResponse) {
 
 func NewResponseWithErr() *models.TaskResponse {
 	return &models.TaskResponse{
-		ID:  1,
 		Err: "error",
 	}
 }
