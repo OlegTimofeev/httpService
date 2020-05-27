@@ -19,7 +19,7 @@ func CreateFetchTask(params operations.CreateFetchTaskParams) middleware.Respond
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")
 	}
-	taskService.TasksChan <- ft
+	taskService.WorkerPool.AddRequest(ft, taskService.Store)
 	return operations.NewCreateFetchTaskOK().WithPayload(ft.ConvertToSwaggerModel())
 }
 
@@ -66,31 +66,6 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 		Request:  ConvertToRequest(task.ConvertToSwaggerModel()),
 		Response: ConvertToResponse(resp.ConvertToSwaggerModel()),
 	})
-}
-
-func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
-	for task := range tasks {
-		res, err := taskService.Requester.DoRequest(*task)
-		if err != nil {
-			task.Status = models.StatusError
-			taskService.Store.UpdateFetchTask(*task)
-			response <- &models.TaskResponse{
-				ID:  task.ID,
-				Err: err.Error(),
-			}
-			return
-		}
-		res.ID = task.ID
-		response <- res
-		task.Status = models.StatusCompleted
-		taskService.Store.UpdateFetchTask(*task)
-	}
-}
-
-func Saver(responses <-chan *models.TaskResponse) {
-	for response := range responses {
-		taskService.Store.AddTaskResponse(response)
-	}
 }
 
 func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse {

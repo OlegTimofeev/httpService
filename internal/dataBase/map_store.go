@@ -3,7 +3,14 @@ package dataBase
 import (
 	"errors"
 	"httpService/internal/models"
+	"sync"
 )
+
+type MapStore struct {
+	Tasks  map[int]*models.FetchTask
+	mutex  sync.Mutex
+	TaskID int
+}
 
 func NewMapStore() *MapStore {
 	ms := new(MapStore)
@@ -65,5 +72,9 @@ func (ms *MapStore) AddTaskResponse(res *models.TaskResponse) (*models.TaskRespo
 }
 
 func (ms *MapStore) UpdateFetchTask(task models.FetchTask) error {
+	return nil
+}
+
+func (ms *MapStore) SetResponse(id int, response *models.TaskResponse, err error) error {
 	return nil
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type Requester interface {
-	DoRequest(task models.FetchTask) (*models.TaskResponse, error)
+	DoRequest(task *models.FetchTask) (*models.TaskResponse, error)
 }
 
 type HTTPRequester struct {

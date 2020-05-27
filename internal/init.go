@@ -5,7 +5,7 @@ import (
 	"httpService/internal/dataBase"
 	"httpService/internal/models"
 	"httpService/internal/request"
-	"httpService/internal/taskHandler"
+	"httpService/internal/taskWorker"
 	"httpService/service/restapi"
 	"httpService/service/restapi/operations"
 	"log"
@@ -32,35 +32,16 @@ func initServer() *restapi.Server {
 }
 
 type TaskService struct {
-	TasksChan     chan *models.FetchTask
-	ResponsesChan chan *models.TaskResponse
-	Store         dataBase.DataStore
-	Requester     request.Requester
-	Server        *restapi.Server
-	TaskHandler   taskHandler.TaskHandler
+	Store      dataBase.DataStore
+	WorkerPool models.WorkerPool
+	Server     *restapi.Server
 }
 
-func NewTaskService(config dataBase.ConfigDB) *TaskService {
+func NewTaskService(config dataBase.ConfigDB, requester request.Requester) *TaskService {
 	taskService = &TaskService{
-		TasksChan:     make(chan *models.FetchTask),
-		ResponsesChan: make(chan *models.TaskResponse),
-		Server:        initServer(),
-		Requester:     request.NewRequester(),
-		Store:         dataBase.NewDataStore(config),
+		WorkerPool: taskWorker.NewWorkerPool(requester),
+		Server:     initServer(),
+		Store:      dataBase.NewDataStore(config),
 	}
-	taskService.TaskHandler = taskHandler.NewProdTaskHandler(taskService.TasksChan, taskService.ResponsesChan)
 	return taskService
-}
-
-func (ts *TaskService) InitWorkers(config dataBase.ConfigDB) {
-	taskService.TaskHandler = taskHandler.NewProdTaskHandler(taskService.TasksChan, taskService.ResponsesChan)
-	taskService.TaskHandler.Init(Worker, Saver, config)
-}
-
-func (ts *TaskService) SetRequester(rm request.Requester) {
-	ts.Requester = rm
-}
-
-func (ts *TaskService) SetTaskHandler(th taskHandler.TaskHandler) {
-	ts.TaskHandler = th
 }

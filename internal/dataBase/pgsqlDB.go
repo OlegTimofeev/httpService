@@ -8,6 +8,10 @@ import (
 	"log"
 )
 
+type PostgresDB struct {
+	pgdb *pg.DB
+}
+
 func connect(config ConfigDB) *pg.DB {
 	postgres := pg.Connect(&pg.Options{User: config.User, Password: config.Password, Database: config.Dbname})
 	return postgres
@@ -101,4 +105,29 @@ func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, e
 		return nil, err
 	}
 	return &tr, nil
+}
+
+func (db *PostgresDB) SetResponse(id int, response *models.TaskResponse, err error) error {
+	task, _ := db.GetFetchTask(id)
+	task.Status = models.StatusInProgress
+	if err := db.UpdateFetchTask(*task); err != nil {
+		return err
+	}
+	if err := db.pgdb.Insert(&models.TaskResponse{
+		ID:      id,
+		Status:  response.Status,
+		Err:     response.Err,
+		BodyLen: response.BodyLen,
+	}); err != nil {
+		return err
+	}
+	if err != nil {
+		task.Status = models.StatusError
+	} else {
+		task.Status = models.StatusCompleted
+	}
+	if err := db.UpdateFetchTask(*task); err != nil {
+		return err
+	}
+	return nil
 }
