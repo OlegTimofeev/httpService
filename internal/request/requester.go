@@ -2,7 +2,6 @@ package request
 
 import (
 	"httpService/internal/models"
-	models2 "httpService/service/models"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -17,29 +16,26 @@ func NewRequester() *HTTPRequester {
 	return rqst
 }
 
-func (requester *HTTPRequester) DoRequest(ft models.FetchTask) (*models2.TaskResponse, error) {
+func (requester *HTTPRequester) DoRequest(ft *models.FetchTask) (*models.TaskResponse, error) {
 	req, err := http.NewRequest(ft.Method, ft.Path, strings.NewReader(ft.Body))
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 	req.Header = ft.Headers
 	resp, err := requester.client.Do(req)
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 	bodyString := string(body)
-	taskResponse := models2.TaskResponse{
-		ID:         int64(ft.ID),
-		HTTPStatus: int64(resp.StatusCode),
-		Method:     ft.Method,
-		Path:       ft.Path,
-		BodyLenght: int64(len(bodyString)),
-		Headers:    resp.Header,
+	taskResponse := models.TaskResponse{
+		ID:      ft.ID,
+		Status:  resp.StatusCode,
+		BodyLen: len(bodyString),
 	}
 	return &taskResponse, nil
 }
