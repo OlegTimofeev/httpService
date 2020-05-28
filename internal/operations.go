@@ -19,7 +19,7 @@ func CreateFetchTask(params operations.CreateFetchTaskParams) middleware.Respond
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")
 	}
-	taskService.TasksChan <- ft
+	taskService.WorkerPool.AddRequest(ft, taskService.Store)
 	return operations.NewCreateFetchTaskOK().WithPayload(ft.ConvertToSwaggerModel())
 }
 
@@ -53,13 +53,14 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
 	}
+	if task.Status == models.StatusError {
+		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
+			Request: ConvertToRequest(task.ConvertToSwaggerModel()),
+		})
+	}
 	resp, err := taskService.Store.GetTaskResponseByFtID(id)
 	if err != nil {
 		return middleware.Error(http.StatusNotFound, "Error : Unable to get tasks from database")
-	}
-	if task.Status == models.StatusError {
-		return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
-			Request: ConvertToRequest(task.ConvertToSwaggerModel())})
 	}
 	return operations.NewGetTaskOK().WithPayload(&models2.FullTask{
 		Request:  ConvertToRequest(task.ConvertToSwaggerModel()),
@@ -67,34 +68,10 @@ func GetTask(params operations.GetTaskParams) middleware.Responder {
 	})
 }
 
-func Worker(tasks <-chan *models.FetchTask, response chan<- *models.TaskResponse) {
-	for task := range tasks {
-		task.Status = models.StatusInProgress
-		taskService.Store.UpdateFetchTask(*task)
-		res, err := taskService.Requester.DoRequest(*task)
-		if err != nil {
-			task.Status = models.StatusError
-			taskService.Store.UpdateFetchTask(*task)
-			response <- &models.TaskResponse{
-				ID:  task.ID,
-				Err: err.Error(),
-			}
-			return
-		}
-		res.ID = task.ID
-		response <- res
-		task.Status = models.StatusCompleted
-		taskService.Store.UpdateFetchTask(*task)
-	}
-}
-
-func Saver(responses <-chan *models.TaskResponse) {
-	for response := range responses {
-		taskService.Store.AddTaskResponse(response)
-	}
-}
-
 func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse {
+	if response == nil {
+		return nil
+	}
 	return &models2.FullTaskResponse{
 		BodyLenght: response.BodyLenght,
 		HTTPStatus: response.HTTPStatus,
@@ -102,6 +79,9 @@ func ConvertToResponse(response *models2.TaskResponse) *models2.FullTaskResponse
 }
 
 func ConvertToRequest(request *models2.FetchTask) *models2.FullTaskRequest {
+	if request == nil {
+		return nil
+	}
 	return &models2.FullTaskRequest{
 		ID:       request.ID,
 		Progress: request.Progress,

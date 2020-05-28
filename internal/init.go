@@ -5,6 +5,7 @@ import (
 	"httpService/internal/dataBase"
 	"httpService/internal/models"
 	"httpService/internal/request"
+	"httpService/internal/taskWorker"
 	"httpService/service/restapi"
 	"httpService/service/restapi/operations"
 	"log"
@@ -31,31 +32,16 @@ func initServer() *restapi.Server {
 }
 
 type TaskService struct {
-	TasksChan     chan *models.FetchTask
-	ResponsesChan chan *models.TaskResponse
-	Store         dataBase.DataStore
-	Requester     request.Requester
-	Server        *restapi.Server
+	Store      dataBase.DataStore
+	WorkerPool models.WorkerPool
+	Server     *restapi.Server
 }
 
-func NewTaskService(config dataBase.ConfigDB) *TaskService {
+func NewTaskService(config dataBase.ConfigDB, requester request.Requester) *TaskService {
 	taskService = &TaskService{
-		TasksChan:     make(chan *models.FetchTask),
-		ResponsesChan: make(chan *models.TaskResponse),
-		Server:        initServer(),
-		Requester:     request.NewRequester(),
-		Store:         dataBase.NewDataStore(config),
+		WorkerPool: taskWorker.NewWorkerPool(requester),
+		Server:     initServer(),
+		Store:      dataBase.NewDataStore(config),
 	}
 	return taskService
-}
-
-func (ts *TaskService) InitRoutines(config dataBase.ConfigDB) {
-	for i := 0; i < config.PoolSize; i++ {
-		go Worker(taskService.TasksChan, taskService.ResponsesChan)
-		go Saver(taskService.ResponsesChan)
-	}
-}
-
-func (ts *TaskService) SetRequester(rm request.Requester) {
-	ts.Requester = rm
 }

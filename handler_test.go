@@ -10,10 +10,8 @@ import (
 	"httpService/internal/models"
 	"httpService/service/client"
 	"httpService/service/client/operations"
-	models2 "httpService/service/models"
 	"net/http"
 	"testing"
-	"time"
 )
 
 func (hs *HandlersSuit) SetupTest() {
@@ -22,25 +20,24 @@ func (hs *HandlersSuit) SetupTest() {
 		Password:  "password",
 		Dbname:    "httpService",
 		StoreType: "postgres",
-		PoolSize:  1,
+		PoolSize:  2,
 	}
-	hs.taskService = internal.NewTaskService(config)
-	hs.taskService.InitRoutines(config)
-	hs.requester = new(TestRequester)
-	hs.taskService.SetRequester(hs.requester)
+	hs.response = new(models.TaskResponse)
+	hs.requester = &TestRequester{
+		response: hs.response,
+		err:      hs.err,
+	}
+	hs.taskService = internal.NewTaskService(config, hs.requester)
 	response := new(models.TaskResponse)
 	hs.requester.SetResponse(response)
 	httpClient := &http.Client{Transport: util2.NewTransport(hs.taskService.Server.GetHandler())}
 	c := client2.NewWithClient(client.DefaultHost, client.DefaultBasePath, client.DefaultSchemes, httpClient)
 	hs.taskClient = client.New(c, nil)
-	//from initialization
-	hs.task.Method = "POST"
-	hs.task.Path = "https://123445"
-	hs.task.Body = ""
 }
 
 type HandlersSuit struct {
-	task        models2.FetchTask
+	response    *models.TaskResponse
+	err         error
 	taskService *internal.TaskService
 	taskClient  *client.FetchtaskHandlingService
 	requester   *TestRequester
@@ -48,85 +45,37 @@ type HandlersSuit struct {
 }
 
 func (hs *HandlersSuit) TestAddFetchTask() {
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
-}
-
-func (hs *HandlersSuit) TestGetTaskError() {
-	hs.requester.SetResponse(nil)
-	hs.requester.SetError(errors.New("error : unable to get response"))
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
-	hs.Require().EqualValues(models.StatusNew, getResponseOK.Payload.Progress)
-	time.Sleep(1 * time.Second)
-	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().NoError(err)
-	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
 }
 
 func (hs *HandlersSuit) TestGetTaskWithError() {
-	hs.requester.SetResponse(nil)
-	hs.requester.SetError(errors.New("error : unable to get response"))
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	hs.err = errors.New("error")
+	task, err := hs.taskService.Store.AddFetchTask(&models.FetchTask{})
+	err = hs.taskService.Store.SetResponse(task.ID, hs.response, hs.err)
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
-	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK.Payload.ID))
-	hs.Require().Error(err)
-	hs.Require().Nil(getTaskOk)
+	getTaskOk, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(int64(task.ID)))
+	hs.Require().NoError(err)
+	hs.Require().Nil(getTaskOk.Payload.Response)
+	hs.Require().EqualValues(models.StatusError, getTaskOk.Payload.Request.Progress)
 }
 
 func (hs *HandlersSuit) TestGetFetchTask() {
-	getResponseOK1, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	task, err := hs.taskService.Store.AddFetchTask(&models.FetchTask{})
+	err = hs.taskService.Store.SetResponse(task.ID, hs.response, hs.err)
+	getTaskOK, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(int64(task.ID)))
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK1)
-	getResponseOK2, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: "hs.task.Method",
-		Path:   "hs.task.Path",
-		Body:   "hs.task.Body",
-	}))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK2)
-	getTaskOK1, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK1.Payload.ID))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getTaskOK1)
-	hs.EqualValues(getResponseOK1.Payload.ID, getTaskOK1.Payload.Request.ID)
-	getTaskOK2, err := hs.taskClient.Operations.GetTask(operations.NewGetTaskParams().WithTaskID(getResponseOK2.Payload.ID))
-	hs.Require().NoError(err)
-	hs.Require().NotNil(getTaskOK2)
-	hs.EqualValues(getResponseOK2.Payload.ID, getTaskOK2.Payload.Request.ID)
+	hs.Require().NotNil(getTaskOK)
+	hs.EqualValues(int64(task.ID), getTaskOK.Payload.Request.ID)
+	hs.Require().EqualValues(models.StatusCompleted, getTaskOK.Payload.Request.Progress)
 }
 
 func (hs *HandlersSuit) TestGetAllFetchTasks() {
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
-	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
 	countOfTasks := 2
@@ -136,11 +85,7 @@ func (hs *HandlersSuit) TestGetAllFetchTasks() {
 }
 
 func (hs *HandlersSuit) TestDeleteFetchTasks() {
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{
-		Method: hs.task.Method,
-		Path:   hs.task.Path,
-		Body:   hs.task.Body,
-	}))
+	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
 	hs.Require().NoError(err)
 	hs.Require().NotNil(getResponseOK)
 	countOfTasks := 1
