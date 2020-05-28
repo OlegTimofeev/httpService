@@ -38,10 +38,11 @@ type TaskService struct {
 }
 
 func NewTaskService(config dataBase.ConfigDB, requester request.Requester) *TaskService {
+	store := dataBase.NewDataStore(config)
 	taskService = &TaskService{
-		WorkerPool: taskWorker.NewWorkerPool(requester),
 		Server:     initServer(),
-		Store:      dataBase.NewDataStore(config),
+		Store:      store,
+		WorkerPool: taskWorker.NewWorkerPool(requester, store, config),
 	}
 	return taskService
 }

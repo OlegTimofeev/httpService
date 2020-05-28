@@ -19,7 +19,7 @@ func CreateFetchTask(params operations.CreateFetchTaskParams) middleware.Respond
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")
 	}
-	taskService.WorkerPool.AddRequest(ft, taskService.Store)
+	taskService.WorkerPool.AddRequest(ft)
 	return operations.NewCreateFetchTaskOK().WithPayload(ft.ConvertToSwaggerModel())
 }
 

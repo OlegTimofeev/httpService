@@ -16,11 +16,13 @@ import (
 
 func (hs *HandlersSuit) SetupTest() {
 	config := dataBase.ConfigDB{
-		User:      "admin",
-		Password:  "password",
-		Dbname:    "httpService",
-		StoreType: "postgres",
-		PoolSize:  2,
+		User:          "admin",
+		Password:      "password",
+		Dbname:        "httpService",
+		StoreType:     "postgres",
+		PoolSize:      2,
+		NatsUrl:       "nats://localhost:4222",
+		StanClusterID: "test-cluster",
 	}
 	hs.response = new(models.TaskResponse)
 	hs.requester = &TestRequester{
@@ -72,12 +74,10 @@ func (hs *HandlersSuit) TestGetFetchTask() {
 }
 
 func (hs *HandlersSuit) TestGetAllFetchTasks() {
-	getResponseOK, err := hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
+	_, err := hs.taskService.Store.AddFetchTask(&models.FetchTask{})
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
-	getResponseOK, err = hs.taskClient.Operations.CreateFetchTask(operations.NewCreateFetchTaskParams().WithTask(operations.CreateFetchTaskBody{}))
+	_, err = hs.taskService.Store.AddFetchTask(&models.FetchTask{})
 	hs.Require().NoError(err)
-	hs.Require().NotNil(getResponseOK)
 	countOfTasks := 2
 	getTasksOK, err := hs.taskClient.Operations.GetAllTasks(operations.NewGetAllTasksParams())
 	hs.Require().NoError(err)

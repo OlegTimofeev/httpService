@@ -5,6 +5,6 @@ import (
 )
 
 type TaskHandler interface {
-	AddRequest(*models.FetchTask, models.CanSetResponse)
+	AddRequest(*models.FetchTask)
 	ListenForTasks()
 }

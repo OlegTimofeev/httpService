@@ -107,21 +107,23 @@ func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, e
 	return &tr, nil
 }
 
-func (db *PostgresDB) SetResponse(id int, response *models.TaskResponse, err error) error {
-	task, _ := db.GetFetchTask(id)
+func (db *PostgresDB) SetResponse(id int, response *models.TaskResponse, errTask error) error {
+	task, err := db.GetFetchTask(id)
+	if err != nil {
+		return err
+	}
 	task.Status = models.StatusInProgress
 	if err := db.UpdateFetchTask(*task); err != nil {
 		return err
 	}
-	if err := db.pgdb.Insert(&models.TaskResponse{
-		ID:      id,
-		Status:  response.Status,
-		Err:     response.Err,
-		BodyLen: response.BodyLen,
-	}); err != nil {
+	response.ID = id
+	if errTask != nil {
+		response.Err = errTask.Error()
+	}
+	if err := db.pgdb.Insert(response); err != nil {
 		return err
 	}
-	if err != nil {
+	if errTask != nil {
 		task.Status = models.StatusError
 	} else {
 		task.Status = models.StatusCompleted
