@@ -9,7 +9,7 @@ type TestRequester struct {
 	err      error
 }
 
-func (requester *TestRequester) DoRequest(ft models.FetchTask) (*models.TaskResponse, error) {
+func (requester *TestRequester) DoRequest(task *models.FetchTask) (*models.TaskResponse, error) {
 	return requester.response, requester.err
 }
 

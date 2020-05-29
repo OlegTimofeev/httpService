@@ -16,29 +16,26 @@ func NewRequester() *HTTPRequester {
 	return rqst
 }
 
-func (requester *HTTPRequester) DoRequest(ft models.FetchTask) (*models.TaskResponse, error) {
+func (requester *HTTPRequester) DoRequest(ft *models.FetchTask) (*models.TaskResponse, error) {
 	req, err := http.NewRequest(ft.Method, ft.Path, strings.NewReader(ft.Body))
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 	req.Header = ft.Headers
 	resp, err := requester.client.Do(req)
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return &models.TaskResponse{}, err
 	}
 	bodyString := string(body)
 	taskResponse := models.TaskResponse{
-		FetchTaskID: ft.ID,
-		Status:      resp.StatusCode,
-		Method:      ft.Method,
-		Path:        ft.Path,
-		BodyLen:     len(bodyString),
-		Headers:     resp.Header,
+		ID:      ft.ID,
+		Status:  resp.StatusCode,
+		BodyLen: len(bodyString),
 	}
 	return &taskResponse, nil
 }

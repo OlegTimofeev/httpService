@@ -8,6 +8,10 @@ import (
 	"log"
 )
 
+type PostgresDB struct {
+	pgdb *pg.DB
+}
+
 func connect(config ConfigDB) *pg.DB {
 	postgres := pg.Connect(&pg.Options{User: config.User, Password: config.Password, Database: config.Dbname})
 	return postgres
@@ -59,7 +63,7 @@ func (db *PostgresDB) AddFetchTask(task *models.FetchTask) (*models.FetchTask, e
 	return task, nil
 }
 
-func (db *PostgresDB) UpdateFetchTask(task *models.FetchTask) error {
+func (db *PostgresDB) UpdateFetchTask(task models.FetchTask) error {
 	if err := db.pgdb.Update(&task); err != nil {
 		return err
 	}
@@ -96,9 +100,34 @@ func (db *PostgresDB) AddTaskResponse(res *models.TaskResponse) (*models.TaskRes
 }
 
 func (db *PostgresDB) GetTaskResponseByFtID(taskId int) (*models.TaskResponse, error) {
-	tr := models.TaskResponse{FetchTaskID: taskId}
-	if err := db.pgdb.Model(&tr).Select(); err != nil {
+	tr := models.TaskResponse{ID: taskId}
+	if err := db.pgdb.Select(&tr); err != nil {
 		return nil, err
 	}
 	return &tr, nil
+}
+
+func (db *PostgresDB) SetResponse(id int, response *models.TaskResponse, err error) error {
+	task, _ := db.GetFetchTask(id)
+	task.Status = models.StatusInProgress
+	if err := db.UpdateFetchTask(*task); err != nil {
+		return err
+	}
+	if err := db.pgdb.Insert(&models.TaskResponse{
+		ID:      id,
+		Status:  response.Status,
+		Err:     response.Err,
+		BodyLen: response.BodyLen,
+	}); err != nil {
+		return err
+	}
+	if err != nil {
+		task.Status = models.StatusError
+	} else {
+		task.Status = models.StatusCompleted
+	}
+	if err := db.UpdateFetchTask(*task); err != nil {
+		return err
+	}
+	return nil
 }
