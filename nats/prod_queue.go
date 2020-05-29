@@ -10,8 +10,8 @@ import (
 )
 
 type Queue struct {
-	Sc    stan.Conn
-	Topic string
+	sc    stan.Conn
+	topic string
 }
 
 func NewStan(config dataBase.ConfigDB) *Queue {
@@ -20,7 +20,7 @@ func NewStan(config dataBase.ConfigDB) *Queue {
 			util.CheckErr(reason, "stan connect lost")
 		}))
 	util.CheckErr(err, "stan.Connect")
-	return &Queue{Sc: sc, Topic: "123"}
+	return &Queue{sc: sc, topic: "123"}
 }
 
 func (q *Queue) Publish(ft models.FetchTask) error {
@@ -28,12 +28,12 @@ func (q *Queue) Publish(ft models.FetchTask) error {
 	if err != nil {
 		return err
 	}
-	if err := q.Sc.Publish(q.Topic, jsonTask); err != nil {
+	if err := q.sc.Publish(q.topic, jsonTask); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (q *Queue) Subscribe(handler func(msg *stan.Msg)) {
-	q.Sc.Subscribe(q.Topic, handler)
+	q.sc.Subscribe(q.topic, handler)
 }

@@ -4,7 +4,7 @@ import (
 	"httpService/internal/models"
 )
 
-type TaskHandler interface {
+type Worker interface {
 	AddRequest(*models.FetchTask)
 	ListenForTasks()
 }

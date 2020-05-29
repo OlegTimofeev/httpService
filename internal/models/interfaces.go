@@ -6,5 +6,4 @@ type CanSetResponse interface {
 
 type WorkerPool interface {
 	AddRequest(*FetchTask)
-	Close()
 }

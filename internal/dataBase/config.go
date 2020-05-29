@@ -5,7 +5,6 @@ type ConfigDB struct {
 	Password      string
 	Dbname        string
 	StoreType     string
-	PoolSize      int
 	NatsUrl       string
 	StanClusterID string
 }

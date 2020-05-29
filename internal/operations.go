@@ -9,12 +9,19 @@ import (
 )
 
 func CreateFetchTask(params operations.CreateFetchTaskParams) middleware.Responder {
-	ft := new(models.FetchTask)
-	ft.Body = params.Task.Body
-	ft.Path = params.Task.Path
-	ft.Headers = params.Task.Headers
-	ft.Method = params.Task.Method
-	ft.Status = models.StatusNew
+	//ft := new(models.FetchTask)
+	//ft.Body = params.Task.Body
+	//ft.Path = params.Task.Path
+	//ft.Headers = params.Task.Headers
+	//ft.Method = params.Task.Method
+	//ft.Status = models.StatusNew
+	ft := &models.FetchTask{
+		Method:  params.Task.Method,
+		Path:    params.Task.Path,
+		Headers: params.Task.Headers,
+		Body:    params.Task.Body,
+		Status:  models.StatusNew,
+	}
 	ft, err := taskService.Store.AddFetchTask(ft)
 	if err != nil {
 		return middleware.Error(http.StatusInternalServerError, "Error : Unable to add tasks to database")

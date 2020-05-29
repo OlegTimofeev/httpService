@@ -91,6 +91,10 @@ func (db *PostgresDB) DeleteFetchTask(taskId int) error {
 	if err := db.pgdb.Delete(&ft); err != nil {
 		return err
 	}
+	resp := models.TaskResponse{ID: taskId}
+	if err := db.pgdb.Delete(&resp); err != nil {
+		return err
+	}
 	return nil
 }
 
