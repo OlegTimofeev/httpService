@@ -1,6 +1,8 @@
 package models
 
-import models2 "httpService/service/models"
+import (
+	models2 "httpService/service/models"
+)
 
 const (
 	StatusNew        = "New"

@@ -5,5 +5,5 @@ type CanSetResponse interface {
 }
 
 type WorkerPool interface {
-	AddRequest(*FetchTask, CanSetResponse)
+	AddRequest(*FetchTask)
 }

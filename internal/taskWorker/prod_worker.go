@@ -1,40 +1,41 @@
 package taskWorker
 
 import (
+	"encoding/json"
+	"github.com/nats-io/stan.go"
+	"httpService/internal/dataBase"
 	"httpService/internal/models"
 	"httpService/internal/request"
+	"httpService/nats"
 )
 
 type ChanWorkerPool struct {
 	requester request.Requester
-
-	tasksChan chan *taskWithStore
-}
-
-type taskWithStore struct {
-	FetchTask *models.FetchTask
 	r         models.CanSetResponse
+	sc        *nats.Queue
 }
 
-func (h *ChanWorkerPool) AddRequest(ft *models.FetchTask, r models.CanSetResponse) {
-	h.tasksChan <- &taskWithStore{
-		FetchTask: ft,
-		r:         r,
-	}
+func (h *ChanWorkerPool) AddRequest(ft *models.FetchTask) {
+	h.sc.Publish(*ft)
 }
 
 func (h *ChanWorkerPool) ListenForTasks() {
-	for tr := range h.tasksChan {
-		res, err := h.requester.DoRequest(tr.FetchTask)
-		tr.r.SetResponse(tr.FetchTask.ID, res, err)
-	}
+	h.sc.Subscribe(h.msgHandler)
 }
 
-func NewWorkerPool(requester request.Requester) *ChanWorkerPool {
+func NewWorkerPool(requester request.Requester, r models.CanSetResponse, config dataBase.ConfigDB) *ChanWorkerPool {
 	pool := &ChanWorkerPool{
 		requester: requester,
-		tasksChan: make(chan *taskWithStore, 1000),
+		r:         r,
+		sc:        nats.NewStan(config),
 	}
 	go pool.ListenForTasks()
 	return pool
+}
+
+func (h *ChanWorkerPool) msgHandler(msg *stan.Msg) {
+	var ft models.FetchTask
+	json.Unmarshal(msg.Data, &ft)
+	res, err := h.requester.DoRequest(&ft)
+	h.r.SetResponse(ft.ID, res, err)
 }
