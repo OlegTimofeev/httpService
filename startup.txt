@@ -1,0 +1,7 @@
+1.If folder service doesn't exist in httpService create
+2.In Makefile run gen-taskService
+3 When client and server created run in Makefile queue
+4.If using postgresDB instead of map
+	a.Run db in docker-compose.yml
+	b.Add to config (StoreType:     "postgres",) in cmd/httpService (by default added)
+5.Run httpService
