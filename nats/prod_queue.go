@@ -20,7 +20,7 @@ func NewStan(config dataBase.ConfigDB) *Queue {
 			util.CheckErr(reason, "stan connect lost")
 		}))
 	util.CheckErr(err, "stan.Connect")
-	return &Queue{sc: sc, topic: "123"}
+	return &Queue{sc: sc, topic: "Create-task"}
 }
 
 func (q *Queue) Publish(ft models.FetchTask) error {
