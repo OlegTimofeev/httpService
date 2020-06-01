@@ -29,7 +29,7 @@ func NewWorkerPool(requester request.Requester, r models.CanSetResponse, config 
 		r:         r,
 		sc:        nats.NewStan(config),
 	}
-	go pool.ListenForTasks()
+	pool.ListenForTasks()
 	return pool
 }
 

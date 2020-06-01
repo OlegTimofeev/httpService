@@ -8,7 +8,7 @@ consumes:
   - application/json
 
 paths:
-  /sendTask:
+  /tasks:
     post:
       summary: create fetchTask
       operationId: createFetchTask
@@ -43,7 +43,6 @@ paths:
           description: Requested page not found
         '500':
           description: Techical probles with server.
-  /getTasks:
     get:
       summary: return tasks
       operationId: getAllTasks
@@ -59,7 +58,7 @@ paths:
             }
         '500':
           description: Techical problems with server.
-  /task/{taskID}:
+  /tasks/{taskID}:
     delete:
       summary: delete task
       operationId: deleteFetchTask

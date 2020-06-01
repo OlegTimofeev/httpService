@@ -15,12 +15,12 @@ gen-taskService:
 	docker run --rm -v `pwd`:/go/ -w /go/ -t $(SWAGGER_IMAGE) \
 	generate server \
 	--target=service \
-	-f taskService.swagger.yml
+	-f api/taskService.swagger.yml
 
 	docker run --rm -v `pwd`:/go/ -w /go/ -t $(SWAGGER_IMAGE) \
 	generate client \
 	--target=service \
-	-f taskService.swagger.yml
+	-f api/taskService.swagger.yml
 
 run queue:
 	docker run -d -p 4222:4222 -p 8222:8222 -p 6222:6222 --name queue nats-streaming:0.14.0
